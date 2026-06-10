@@ -702,44 +702,25 @@ function handleFileUpload(e) {
 
 async function processCarburantFile(file) {
   const zone = document.getElementById('carb-upload-zone');
-  zone.innerHTML = '<div class="spin" style="margin:0 auto 12px"></div><div style="font-size:13px;color:var(--gray-500)">Analyse en cours…</div>';
-
+  zone.innerHTML = '<div style="text-align:center;padding:20px"><div class="spin" style="margin:0 auto 12px"></div><div style="font-size:13px;color:var(--gray-500)">Analyse en cours...</div></div>';
   try {
     const data = await file.arrayBuffer();
     const workbook = XLSX.read(data, { type: 'array' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    
-    // Find header row (row 5 = index 4)
     const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    
-    // Find header row
     let headerRow = 4;
     for (let i = 0; i < raw.length; i++) {
-      if (raw[i] && raw[i].includes('Immatriculation véhicule')) {
-        headerRow = i;
-        break;
-      }
+      if (raw[i] && raw[i].includes('Immatriculation véhicule')) { headerRow = i; break; }
     }
-    
     const headers = raw[headerRow];
     const rows = raw.slice(headerRow + 1).filter(r => r && r[headers.indexOf('Immatriculation véhicule')]);
-    
-    // Extract period from first rows
     let period = '';
     for (let i = 0; i < 4; i++) {
-      if (raw[i]) {
-        const str = raw[i].join(' ');
-        if (str.includes('Du')) period = str.replace(/Filtre.*?:/g,'').replace(/Période.*?:/g,'').replace(/Compte.*$/,'').trim();
-      }
+      if (raw[i]) { const str = raw[i].join(' '); if (str.includes('Du')) period = str.replace(/Filtre.*?:/g,'').replace(/Période.*?:/g,'').replace(/Compte.*$/,'').trim(); }
     }
     carbMeta.period = period;
-    carbMeta.filename = file.name;
-    
     const idx = {};
-    ['Immatriculation véhicule','Division','Catégorie / Libellé produit','Produit','Quantité','Unité','Montant HT - EUR','Date','Ville','Kilométrage'].forEach(col => {
-      idx[col] = headers.indexOf(col);
-    });
-    
+    ['Immatriculation véhicule','Division','Catégorie / Libellé produit','Produit','Quantité','Unité','Montant HT - EUR','Date','Ville','Kilométrage'].forEach(col => { idx[col] = headers.indexOf(col); });
     carbData = rows.map(r => {
       const immat = r[idx['Immatriculation véhicule']] || '';
       const division = r[idx['Division']] || '';
@@ -749,31 +730,23 @@ async function processCarburantFile(file) {
       const montant = parseFloat(r[idx['Montant HT - EUR']]) || 0;
       const date = r[idx['Date']] || '';
       const ville = r[idx['Ville']] || '';
-      const km = parseFloat(r[idx['Kilométrage']]) || 0;
-      
-      // Determine atelier
       let atelier = getAtelierFromImmat(immat);
       if (!atelier) atelier = divisionMap[division] || 'Non identifié';
-      
-      // Normalize category
       let type = 'Autre';
       const cat = categorie.toLowerCase();
       if (cat.includes('diesel') || cat.includes('gazole')) type = 'Diesel';
-      else if (cat.includes('sans plomb') || cat.includes('super') || cat.includes('sp')) type = 'Sans plomb';
+      else if (cat.includes('sans plomb') || cat.includes('super')) type = 'Sans plomb';
       else if (cat.includes('lavage')) type = 'Lavage';
-      else if (cat.includes('adblue') || cat.includes('ad blue')) type = 'AdBlue';
+      else if (cat.includes('adblue')) type = 'AdBlue';
       else if (cat.includes('lubri')) type = 'Lubrifiants';
-      
-      return { immat, division, atelier, type, produit, quantite, montant, date, ville, km, categorie };
+      return { immat, division, atelier, type, produit, quantite, montant, date, ville, categorie };
     }).filter(r => r.immat);
-    
     zone.style.display = 'none';
     renderCarburant();
     document.getElementById('btn-export-carb').style.display = 'inline-flex';
-    toast(`✓ ${carbData.length} transactions chargées`);
-    
+    toast('Transactions chargées : ' + carbData.length);
   } catch(e) {
-    zone.innerHTML = '<i class="ti ti-alert-triangle" style="font-size:36px;color:var(--red);display:block;margin-bottom:8px"></i><div style="font-size:13px;color:var(--red)">Erreur de lecture — vérifie que c'est bien un fichier Total Energies .xlsx</div>';
+    zone.innerHTML = '<div style="color:var(--red);font-size:13px;padding:20px;text-align:center">Erreur de lecture - verifie le format .xlsx</div>';
     console.error(e);
   }
 }
