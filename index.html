@@ -662,8 +662,6 @@ function saveCfg(){
 
 // UTILS
 function toast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.style.background=t==='e'?'#B91C1C':'#111827';el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000);}
-}
-}
 function setDb(s,l){const el=document.getElementById('dbst');el.querySelector('.dot').className=`dot ${s==='on'?'on':s==='err'?'err':'off'}`;el.querySelector('span:last-child').textContent=l;}
 function cpSQL(){navigator.clipboard.writeText(document.getElementById('sql').textContent).then(()=>toast('✓ SQL copié'));}
 // ── CARBURANT ──
