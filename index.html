@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Gestion de Flotte — Terres de Cuisine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#2D6A4F;--green-light:#D8F3DC;--green-mid:#52B788;
+  --amber:#B45309;--amber-light:#FEF3C7;
+  --red:#B91C1C;--red-light:#FEE2E2;
+  --blue:#1E40AF;--blue-light:#EFF6FF;
+  --gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;
+  --gray-500:#6B7280;--gray-700:#374151;--gray-900:#111827;
+  --sw:240px;--fd:'Inter Tight',sans-serif;--fb:'Inter',sans-serif;
+  --rs:6px;--rm:10px;--rl:14px;
+}
+body{font-family:var(--fb);font-size:14px;color:var(--gray-900);background:var(--gray-50);display:flex;min-height:100vh}
+.sidebar{width:var(--sw);background:#fff;border-right:1px solid var(--gray-200);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sb-head{padding:20px 16px 16px;border-bottom:1px solid var(--gray-100)}
+.brand{display:flex;align-items:center;gap:10px}
+.blogo{width:36px;height:36px;background:var(--green);color:#fff;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:13px}
+.bname{display:block;font-family:var(--fd);font-weight:700;font-size:13px;line-height:1.2}
+.bsub{display:block;font-size:11px;color:var(--gray-500);line-height:1.2}
+.sb-nav{flex:1;padding:12px 8px;overflow-y:auto}
+.nav-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-500);padding:8px 8px 6px}
+.ni{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--rs);color:var(--gray-700);font-size:13px;font-weight:500;cursor:pointer;transition:background .12s;margin-bottom:2px;user-select:none}
+.ni:hover{background:var(--gray-100)}.ni.active{background:var(--green-light);color:var(--green)}.ni.active .ti{color:var(--green)}
+.ni.soon{opacity:.5;cursor:default;pointer-events:none}.ni .ti{font-size:16px;flex-shrink:0}
+.nbadge{margin-left:auto;background:var(--red-light);color:var(--red);font-size:11px;font-weight:600;padding:1px 7px;border-radius:20px;display:none}
+.npill{margin-left:auto;background:var(--gray-100);color:var(--gray-500);font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px}
+.sb-foot{padding:12px 16px;border-top:1px solid var(--gray-100)}
+.ucard{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.uav{width:32px;height:32px;border-radius:50%;background:var(--green-light);color:var(--green);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.uname{display:block;font-size:13px;font-weight:600}.urole{display:block;font-size:11px;color:var(--gray-500)}
+.dbst{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gray-500)}
+.dot{width:7px;height:7px;border-radius:50%}
+.dot.on{background:var(--green-mid)}.dot.off{background:var(--gray-200)}.dot.err{background:var(--red)}
+.main{margin-left:var(--sw);flex:1;padding:32px}
+.mod{max-width:1100px;display:none}.mod.active{display:block}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px}
+.ptitle{font-family:var(--fd);font-size:22px;font-weight:700;line-height:1.2}
+.psub{font-size:13px;color:var(--gray-500);margin-top:3px}
+.ha{display:flex;gap:10px;align-items:center;flex-shrink:0}
+.bp,.bs,.ba{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--rs);font-family:var(--fb);font-size:13px;font-weight:500;cursor:pointer;border:none;white-space:nowrap;transition:opacity .12s}
+.bp{background:var(--green);color:#fff}.bp:hover{opacity:.88}
+.bs{background:#fff;color:var(--gray-700);border:1px solid var(--gray-200)}.bs:hover{background:var(--gray-50)}
+.ba{background:var(--amber-light);color:var(--amber);border:1px solid #FDE68A}.ba:hover{opacity:.85}
+.krow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.kc{background:#fff;border:1px solid var(--gray-200);border-radius:var(--rm);padding:16px 20px;display:flex;flex-direction:column;gap:4px}
+.kv{font-family:var(--fd);font-size:28px;font-weight:700}.kl{font-size:12px;color:var(--gray-500)}
+.kg .kv{color:var(--green)}.ka .kv{color:var(--amber)}.kr .kv{color:var(--red)}
+.fb{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.fs{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--gray-200);border-radius:var(--rs);padding:7px 12px;flex:1;min-width:180px}
+.fs .ti{color:var(--gray-500);font-size:15px}
+.fs input{border:none;outline:none;background:transparent;font-family:var(--fb);font-size:13px;width:100%}
+.fb select{background:#fff;border:1px solid var(--gray-200);border-radius:var(--rs);padding:7px 12px;font-family:var(--fb);font-size:13px;color:var(--gray-700);cursor:pointer;outline:none}
+.tw{background:#fff;border:1px solid var(--gray-200);border-radius:var(--rl);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead tr{background:var(--gray-50);border-bottom:1px solid var(--gray-200)}
+th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);cursor:pointer;white-space:nowrap;user-select:none}
+th:hover{color:var(--gray-900)}th .ti{font-size:12px;opacity:.5;margin-left:2px}
+tbody tr{border-bottom:1px solid var(--gray-100);transition:background .1s}
+tbody tr:last-child{border-bottom:none}tbody tr:hover{background:var(--gray-50)}
+td{padding:12px 16px;color:var(--gray-700);vertical-align:middle}
+.tim{font-family:var(--fd);font-weight:600;color:var(--gray-900)!important;letter-spacing:.03em}
+.tac{display:flex;gap:6px;justify-content:flex-end}
+.bi{width:30px;height:30px;border-radius:var(--rs);border:1px solid var(--gray-200);background:#fff;color:var(--gray-500);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;transition:background .1s}
+.bi:hover{background:var(--gray-100)}.bi.d:hover{background:var(--red-light);color:var(--red);border-color:#FCA5A5}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.bok{background:var(--green-light);color:var(--green)}.bwarn{background:var(--amber-light);color:var(--amber)}
+.bdanger{background:var(--red-light);color:var(--red)}.bexp{background:#F3F4F6;color:var(--gray-500)}
+.bfav{background:var(--green-light);color:var(--green)}.bdef{background:var(--red-light);color:var(--red)}
+.bcv{background:var(--amber-light);color:var(--amber)}.bmin{background:var(--amber-light);color:var(--amber)}
+.bmaj{background:var(--red-light);color:var(--red)}
+.te{display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px;color:var(--gray-500);text-align:center}
+.te.show{display:flex}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center;padding:20px}
+.ov.open{display:flex}
+.modal{background:#fff;border-radius:var(--rl);width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.12)}
+.mh{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--gray-100)}
+.mh h2{font-family:var(--fd);font-size:17px;font-weight:700}
+.mc{width:30px;height:30px;border-radius:var(--rs);border:1px solid var(--gray-200);background:#fff;color:var(--gray-500);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px}
+.mb{padding:20px 24px}.mf{display:flex;gap:10px;justify-content:flex-end;padding:16px 24px;border-top:1px solid var(--gray-100)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg .g{display:flex;flex-direction:column;gap:5px}.fg .g.full{grid-column:1/-1}
+.fg label{font-size:12px;font-weight:600;color:var(--gray-700)}
+.fg input,.fg select,.fg textarea{padding:9px 12px;border:1px solid var(--gray-200);border-radius:var(--rs);font-family:var(--fb);font-size:13px;color:var(--gray-900);background:#fff;outline:none;transition:border-color .12s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--green)}
+.fg textarea{resize:vertical;min-height:70px}
+.ferr{margin-top:10px;font-size:12px;color:var(--red);min-height:16px}
+.ibox{display:flex;gap:10px;background:var(--blue-light);border:1px solid #BFDBFE;border-radius:var(--rm);padding:12px 14px;font-size:13px;color:var(--blue);line-height:1.6;margin-bottom:14px}
+.ibox .ti{font-size:18px;flex-shrink:0;margin-top:1px}
+.sqlb{background:var(--gray-900);border-radius:var(--rm);padding:14px 16px;margin-top:14px}
+.sqll{font-size:11px;color:var(--gray-500);margin-bottom:8px;font-weight:500}
+.sqlb pre{font-family:'Courier New',monospace;font-size:12px;color:#86EFAC;white-space:pre-wrap;word-break:break-all}
+.bcopy{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:var(--rs);background:var(--gray-100);color:var(--gray-700);border:1px solid var(--gray-200);font-size:12px;font-weight:500;cursor:pointer;margin-top:8px}
+/* ANOMALIES */
+.step{background:#fff;border:1px solid var(--gray-200);border-radius:var(--rl);padding:20px 24px;margin-bottom:16px}
+.step-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.snum{width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stitle{font-family:var(--fd);font-size:15px;font-weight:700}.ssub{font-size:12px;color:var(--gray-500);margin-top:1px}
+.arow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.abtn{padding:6px 12px;border-radius:20px;border:1px solid var(--gray-200);background:#fff;font-size:12px;font-weight:500;cursor:pointer;color:var(--gray-700);transition:all .12s}
+.abtn:hover{background:var(--gray-100)}.abtn.active{background:var(--green);color:#fff;border-color:var(--green)}
+.prow{display:flex;gap:12px;margin-bottom:4px}
+.pg{display:flex;flex-direction:column;gap:5px;flex:1}
+.pg label{font-size:12px;font-weight:600;color:var(--gray-700)}
+.pg input,.pg select{padding:8px 12px;border:1px solid var(--gray-200);border-radius:var(--rs);font-family:var(--fb);font-size:13px;color:var(--gray-900);background:#fff;outline:none}
+.pg input:focus,.pg select:focus{border-color:var(--green)}
+textarea.raw{width:100%;min-height:160px;border:1px solid var(--gray-200);border-radius:var(--rm);padding:12px;font-family:'Courier New',monospace;font-size:12px;resize:vertical;outline:none;background:#fff}
+textarea.raw:focus{border-color:var(--green)}
+.thint{font-size:11px;color:var(--gray-500);margin-top:6px}
+.rbox{display:none;margin-top:16px}.rbox.show{display:block}
+.rh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.rt{font-family:var(--fd);font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.rt i{color:var(--green);font-size:18px}
+.rc{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--rm);padding:20px 24px;font-size:13px;line-height:1.8;white-space:pre-wrap;max-height:500px;overflow-y:auto}
+.gen{display:none;align-items:center;gap:10px;padding:12px 14px;background:var(--green-light);border-radius:var(--rm);font-size:13px;color:var(--green);font-weight:500;margin-top:12px}
+.gen.show{display:flex}
+.spin{width:18px;height:18px;border:2px solid var(--green-mid);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.exbtn{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:var(--rs);font-size:11px;color:var(--gray-700);cursor:pointer;margin-top:8px}
+.tips{background:var(--amber-light);border:1px solid #FDE68A;border-radius:var(--rm);padding:12px 14px;font-size:12px;color:var(--amber);display:flex;gap:8px;margin-top:12px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--gray-900);color:#fff;padding:10px 16px;border-radius:var(--rm);font-size:13px;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:3px}
+/* MELINA CHAT */
+.melina-btn{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--green);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px rgba(45,106,79,.35);z-index:500;transition:transform .15s}
+.melina-btn:hover{transform:scale(1.08)}
+.melina-panel{position:fixed;bottom:90px;right:24px;width:360px;height:520px;background:#fff;border:1px solid var(--gray-200);border-radius:var(--rl);box-shadow:0 20px 60px rgba(0,0,0,.12);z-index:500;display:none;flex-direction:column;overflow:hidden}
+.melina-panel.open{display:flex}
+.melina-head{background:var(--green);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.melina-av{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.melina-info{flex:1}
+.melina-name{font-family:var(--fd);font-weight:700;font-size:15px}
+.melina-status{font-size:11px;opacity:.8}
+.melina-close{background:none;border:none;color:#fff;cursor:pointer;font-size:18px;opacity:.8;padding:4px}
+.melina-close:hover{opacity:1}
+.melina-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.msg{display:flex;gap:8px;max-width:100%}
+.msg.user{flex-direction:row-reverse}
+.msg-bubble{padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.6;max-width:85%;white-space:pre-wrap}
+.msg.ai .msg-bubble{background:var(--gray-100);color:var(--gray-900);border-bottom-left-radius:3px}
+.msg.user .msg-bubble{background:var(--green);color:#fff;border-bottom-right-radius:3px}
+.msg-av{width:28px;height:28px;border-radius:50%;background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.msg.user .msg-av{background:var(--gray-200);color:var(--gray-700)}
+.melina-input{padding:12px;border-top:1px solid var(--gray-100);display:flex;gap:8px;flex-shrink:0}
+.melina-input input{flex:1;border:1px solid var(--gray-200);border-radius:20px;padding:8px 14px;font-family:var(--fb);font-size:13px;outline:none}
+.melina-input input:focus{border-color:var(--green)}
+.melina-send{width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.melina-send:hover{opacity:.88}.melina-send:disabled{opacity:.5;cursor:not-allowed}
+.typing{display:flex;gap:4px;align-items:center;padding:6px 4px}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--gray-300);animation:bounce .9s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.quick-btns{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px}
+.qbtn{padding:5px 10px;border-radius:20px;border:1px solid var(--gray-200);background:#fff;font-size:11px;color:var(--gray-700);cursor:pointer;transition:background .12s}
+.qbtn:hover{background:var(--gray-100)}
+.atelier-card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--rl);padding:16px 20px;margin-bottom:12px}
+.atelier-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.atelier-card-name{font-family:var(--fd);font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.atelier-card-name i{color:var(--green)}
+.atelier-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.astat{background:var(--gray-50);border-radius:var(--rm);padding:10px 12px;text-align:center}
+.astat-val{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--gray-900)}
+.astat-lbl{font-size:10px;color:var(--gray-500);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+.astat.green .astat-val{color:var(--green)}
+.astat.amber .astat-val{color:var(--amber)}
+.astat.red .astat-val{color:var(--red)}
+.astat.blue .astat-val{color:var(--blue)}
+.progress-bar{height:4px;background:var(--gray-100);border-radius:2px;margin-top:10px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s}
+
+
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sb-head">
+    <div class="brand">
+      <div class="blogo">TC</div>
+      <div><span class="bname">Terres de Cuisine</span><span class="bsub">Gestion de flotte</span></div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-lbl">Modules</div>
+    <div class="ni active" data-mod="ct" onclick="showMod('ct')"><i class="ti ti-certificate"></i><span>Contrôle technique</span><span class="nbadge" id="badge-ct">0</span></div>
+    <div class="ni" data-mod="frax" onclick="showMod('frax')"><i class="ti ti-cloud"></i><span>FRAX / Pollution</span><span class="nbadge" id="badge-frax">0</span></div>
+    <div class="ni" data-mod="anomalies" onclick="showMod('anomalies')"><i class="ti ti-gas-station"></i><span>Anomalies carburant</span></div>
+    <div class="ni" data-mod="carburant" onclick="showMod('carburant')"><i class="ti ti-chart-bar"></i><span>Transactions carburant</span></div>
+    <div class="ni soon"><i class="ti ti-tool"></i><span>Révisions</span><span class="npill">Bientôt</span></div>
+    <div class="ni soon"><i class="ti ti-alert-triangle"></i><span>Sinistres</span><span class="npill">Bientôt</span></div>
+  </nav>
+  <div class="sb-foot">
+    <div class="ucard">
+      <div class="uav">LR</div>
+      <div><span class="uname">Luis Ribeiro</span><span class="urole">Gestionnaire de flotte</span></div>
+    </div>
+    <div class="dbst" id="dbst"><span class="dot off"></span><span>Connexion…</span></div>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- ══ CT ══ -->
+<div class="mod active" id="mod-ct">
+  <div class="ph">
+    <div><h1 class="ptitle">Contrôle technique</h1><p class="psub">Suivi des échéances CT</p></div>
+    <div class="ha">
+      <button class="bs" onclick="openMod('cfg')"><i class="ti ti-settings"></i> Supabase</button>
+      <button class="bp" onclick="openMod('add-ct')"><i class="ti ti-plus"></i> Nouveau CT</button>
+    </div>
+  </div>
+  <div class="krow">
+    <div class="kc"><span class="kv" id="ct-tot">0</span><span class="kl">Véhicules</span></div>
+    <div class="kc kg"><span class="kv" id="ct-ok">0</span><span class="kl">À jour</span></div>
+    <div class="kc ka"><span class="kv" id="ct-w">0</span><span class="kl">Alerte 3 mois</span></div>
+    <div class="kc kr"><span class="kv" id="ct-d">0</span><span class="kl">Urgent / Expiré</span></div>
+  </div>
+  <div class="fb">
+    <div class="fs"><i class="ti ti-search"></i><input type="text" id="ct-s" placeholder="Rechercher…" oninput="rCT()"/></div>
+    <select id="ct-fa" onchange="rCT()"><option value="">Tous ateliers</option><option>Cévennes</option><option>Haute-Provence</option><option>Méditerranée</option><option>Provence</option><option>Rhône-Isère</option><option>Gestion</option><option>Fonction/Services</option></select>
+    <select id="ct-fs" onchange="rCT()"><option value="">Tous statuts</option><option value="ok">À jour</option><option value="warn">3 mois</option><option value="danger">Urgent</option><option value="expired">Expiré</option></select>
+    <button class="bs" onclick="expCSV('ct')"><i class="ti ti-download"></i> CSV</button>
+    <button class="ba" onclick="alertMail('ct')"><i class="ti ti-mail"></i> Alertes</button>
+  </div>
+  <div class="tw">
+    <table><thead><tr>
+      <th onclick="srt('ct','immat')">Immat <i class="ti ti-arrows-sort"></i></th>
+      <th onclick="srt('ct','vehicule')">Véhicule <i class="ti ti-arrows-sort"></i></th>
+      <th onclick="srt('ct','atelier')">Atelier <i class="ti ti-arrows-sort"></i></th>
+      <th onclick="srt('ct','dateCT')">Date CT <i class="ti ti-arrows-sort"></i></th>
+      <th onclick="srt('ct','echeance')">Échéance <i class="ti ti-arrows-sort"></i></th>
+      <th>Résultat</th><th>Statut</th><th></th>
+    </tr></thead><tbody id="ct-tb"></tbody></table>
+    <div class="te show" id="ct-em"><i class="ti ti-certificate" style="font-size:36px;opacity:.3"></i><p>Aucun CT enregistré.</p><button class="bp" onclick="openMod('add-ct')"><i class="ti ti-plus"></i> Ajouter</button></div>
+  </div>
+</div>
+
+<!-- ══ FRAX ══ -->
+<div class="mod" id="mod-frax">
+  <div class="ph">
+    <div><h1 class="ptitle">FRAX / Contrôle pollution</h1><p class="psub">Suivi des contrôles antipollution</p></div>
+    <div class="ha">
+      <button class="bs" onclick="expCSV('frax')"><i class="ti ti-download"></i> CSV</button>
+      <button class="ba" onclick="alertMail('frax')"><i class="ti ti-mail"></i> Alertes</button>
+      <button class="bp" onclick="openMod('add-frax')"><i class="ti ti-plus"></i> Nouveau FRAX</button>
+    </div>
+  </div>
+  <div class="krow">
+    <div class="kc"><span class="kv" id="frax-tot">0</span><span class="kl">Véhicules</span></div>
+    <div class="kc kg"><span class="kv" id="frax-ok">0</span><span class="kl">À jour</span></div>
+    <div class="kc ka"><span class="kv" id="frax-w">0</span><span class="kl">Alerte 3 mois</span></div>
+    <div class="kc kr"><span class="kv" id="frax-d">0</span><span class="kl">Urgent / Expiré</span></div>
+  </div>
+  <div class="fb">
+    <div class="fs"><i class="ti ti-search"></i><input type="text" id="frax-s" placeholder="Rechercher…" oninput="rFRAX()"/></div>
+    <select id="frax-fa" onchange="rFRAX()"><option value="">Tous ateliers</option><option>Cévennes</option><option>Haute-Provence</option><option>Méditerranée</option><option>Provence</option><option>Rhône-Isère</option><option>Gestion</option><option>Fonction/Services</option></select>
+    <select id="frax-fs" onchange="rFRAX()"><option value="">Tous statuts</option><option value="ok">À jour</option><option value="warn">3 mois</option><option value="danger">Urgent</option><option value="expired">Expiré</option></select>
+  </div>
+  <div class="tw">
+    <table><thead><tr>
+      <th onclick="srt('frax','immat')">Immat <i class="ti ti-arrows-sort"></i></th>
+      <th onclick="srt('frax','vehicule')">Véhicule <i class="ti ti-arrows-sort"></i></th>
+      <th onclick="srt('frax','atelier')">Atelier <i class="ti ti-arrows-sort"></i></th>
+      <th onclick="srt('frax','categorie')">Catégorie <i class="ti ti-arrows-sort"></i></th>
+      <th onclick="srt('frax','dateFRAX')">Date contrôle <i class="ti ti-arrows-sort"></i></th>
+      <th onclick="srt('frax','echeance')">Échéance <i class="ti ti-arrows-sort"></i></th>
+      <th>Résultat</th><th>Statut</th><th></th>
+    </tr></thead><tbody id="frax-tb"></tbody></table>
+    <div class="te show" id="frax-em"><i class="ti ti-cloud" style="font-size:36px;opacity:.3"></i><p>Aucun FRAX enregistré.</p><button class="bp" onclick="openMod('add-frax')"><i class="ti ti-plus"></i> Ajouter</button></div>
+  </div>
+</div>
+
+<!-- ══ ANOMALIES ══ -->
+<div class="mod" id="mod-anomalies">
+  <div class="ph">
+    <div><h1 class="ptitle">Anomalies carburant</h1><p class="psub">Analyse IA · Compte rendu pour responsables logistique</p></div>
+  </div>
+  <div class="step">
+    <div class="step-h"><div class="snum">1</div><div><div class="stitle">Atelier &amp; période</div><div class="ssub">Sélectionne l'atelier et la période concernée</div></div></div>
+    <div class="arow">
+      <button class="abtn active" onclick="selAt(this,'Tous les ateliers')">Tous</button>
+      <button class="abtn" onclick="selAt(this,'Cévennes')">Cévennes</button>
+      <button class="abtn" onclick="selAt(this,'Haute-Provence')">Haute-Provence</button>
+      <button class="abtn" onclick="selAt(this,'Méditerranée')">Méditerranée</button>
+      <button class="abtn" onclick="selAt(this,'Provence')">Provence</button>
+      <button class="abtn" onclick="selAt(this,'Rhône-Isère')">Rhône-Isère</button>
+    </div>
+    <div class="prow">
+      <div class="pg"><label>Du</label><input type="month" id="p-deb"/></div>
+      <div class="pg"><label>Au</label><input type="month" id="p-fin"/></div>
+      <div class="pg"><label>Destinataire</label><input type="text" id="p-dest" placeholder="M. Martin, resp. logistique…"/></div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-h"><div class="snum">2</div><div><div class="stitle">Colle tes données</div><div class="ssub">Copie-colle depuis Excel, CSV ou SuivideFlotte</div></div></div>
+    <textarea class="raw" id="raw" placeholder="Immat | Véhicule | Atelier | Conso réelle | Conso théo | Écart | Km&#10;AB-123-CD | Kangoo | Provence | 12.4 | 8.5 | +46% | 3240&#10;..."></textarea>
+    <button class="exbtn" onclick="loadEx()"><i class="ti ti-table"></i> Charger un exemple</button>
+    <div class="thint">Formats acceptés : Excel collé, CSV, tableau brut SuivideFlotte.</div>
+  </div>
+  <div class="step">
+    <div class="step-h"><div class="snum">3</div><div><div class="stitle">Format du compte rendu</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <label style="cursor:pointer"><input type="radio" name="fmt" value="synthetique" checked style="margin-right:6px"/><span style="font-size:13px;font-weight:500">Synthétique</span><div style="font-size:11px;color:var(--gray-500);margin-left:20px;margin-top:3px">Résumé court + actions</div></label>
+      <label style="cursor:pointer"><input type="radio" name="fmt" value="detaille" style="margin-right:6px"/><span style="font-size:13px;font-weight:500">Détaillé</span><div style="font-size:11px;color:var(--gray-500);margin-left:20px;margin-top:3px">Véhicule par véhicule</div></label>
+      <label style="cursor:pointer"><input type="radio" name="fmt" value="formel" style="margin-right:6px"/><span style="font-size:13px;font-weight:500">Email formel</span><div style="font-size:11px;color:var(--gray-500);margin-left:20px;margin-top:3px">Prêt à envoyer</div></label>
+    </div>
+  </div>
+  <button class="bp" id="btn-gen" onclick="genReport()" style="width:100%;justify-content:center;padding:11px"><i class="ti ti-sparkles"></i> Générer le compte rendu</button>
+  <div class="gen" id="gen"><div class="spin"></div><span id="gen-msg">Analyse en cours…</span></div>
+  <div class="rbox" id="rbox">
+    <div class="rh"><div class="rt"><i class="ti ti-check"></i> Compte rendu généré</div><button class="bp" id="bcopy" onclick="copyR()"><i class="ti ti-copy"></i> Copier</button></div>
+    <div class="rc" id="rc"></div>
+    <div class="tips"><i class="ti ti-bulb"></i><span>Colle ce texte directement dans ton mail Outlook.</span></div>
+    <button class="bs" onclick="genReport()" style="margin-top:12px;width:100%;justify-content:center"><i class="ti ti-refresh"></i> Régénérer</button>
+  </div>
+</div>
+
+
+<!-- ══ CARBURANT ══ -->
+<div class="mod" id="mod-carburant">
+  <div class="ph">
+    <div><h1 class="ptitle">Transactions carburant</h1><p class="psub">Analyse par atelier · Fichier Total Energies</p></div>
+    <div class="ha">
+      <button class="bs" id="btn-export-carb" onclick="exportCarburant()" style="display:none"><i class="ti ti-download"></i> Export CSV</button>
+    </div>
+  </div>
+
+  <!-- UPLOAD ZONE -->
+  <div id="carb-upload-zone" style="background:#fff;border:2px dashed var(--gray-200);border-radius:var(--rl);padding:40px;text-align:center;margin-bottom:20px;cursor:pointer;transition:border-color .15s" onclick="document.getElementById('carb-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--green)'" ondragleave="this.style.borderColor='var(--gray-200)'" ondrop="handleDrop(event)">
+    <i class="ti ti-file-spreadsheet" style="font-size:40px;color:var(--gray-300);display:block;margin-bottom:12px"></i>
+    <div style="font-family:var(--fd);font-size:16px;font-weight:700;color:var(--gray-700);margin-bottom:6px">Glisse ton fichier Total Energies ici</div>
+    <div style="font-size:13px;color:var(--gray-500)">ou clique pour sélectionner · Format Excel (.xlsx)</div>
+    <input type="file" id="carb-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileUpload(event)"/>
+  </div>
+
+  <!-- PERIOD INFO -->
+  <div id="carb-period" style="display:none;background:var(--green-light);border-radius:var(--rm);padding:10px 16px;font-size:13px;color:var(--green);margin-bottom:16px;display:none;align-items:center;gap:8px">
+    <i class="ti ti-calendar"></i><span id="carb-period-text"></span>
+  </div>
+
+  <!-- KPI ROW -->
+  <div class="krow" id="carb-kpis" style="display:none">
+    <div class="kc"><span class="kv" id="carb-tot-trans">0</span><span class="kl">Transactions</span></div>
+    <div class="kc kg"><span class="kv" id="carb-tot-litres">0</span><span class="kl">Litres total</span></div>
+    <div class="kc ka"><span class="kv" id="carb-tot-cout">0€</span><span class="kl">Coût total HT</span></div>
+    <div class="kc"><span class="kv" id="carb-tot-lavage">0</span><span class="kl">Lavages</span></div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="fb" id="carb-filters" style="display:none">
+    <select id="carb-filter-type" onchange="renderCarburant()">
+      <option value="">Tous types</option>
+      <option value="Diesel">Diesel</option>
+      <option value="Sans plomb">Sans plomb</option>
+      <option value="Lavage">Lavage</option>
+      <option value="AdBlue">AdBlue</option>
+      <option value="Lubrifiants">Lubrifiants</option>
+    </select>
+    <select id="carb-filter-atelier" onchange="renderCarburant()">
+      <option value="">Tous ateliers</option>
+      <option>Cévennes</option><option>Haute-Provence</option><option>Méditerranée</option><option>Provence</option><option>Rhône-Isère</option><option>Gestion</option><option>Fonction/Services</option><option>Non identifié</option>
+    </select>
+  </div>
+
+  <!-- TABLEAU PAR ATELIER -->
+  <div id="carb-atelier-grid" style="display:none;margin-bottom:20px"></div>
+
+  <!-- TABLEAU DETAIL -->
+  <div class="tw" id="carb-detail-wrap" style="display:none">
+    <table class="data-table">
+      <thead><tr>
+        <th>Date</th><th>Immatriculation</th><th>Atelier</th><th>Type</th><th>Produit</th><th>Quantité</th><th>Montant HT</th><th>Ville</th>
+      </tr></thead>
+      <tbody id="carb-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+
+<!-- MODAL ADD CT -->
+<div class="ov" id="ov-add-ct" onclick="closeMod(event,'ov-add-ct')">
+  <div class="modal">
+    <div class="mh"><h2>Nouveau contrôle technique</h2><button class="mc" onclick="closeModal('ov-add-ct')"><i class="ti ti-x"></i></button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="g"><label>Immatriculation *</label><input type="text" id="ci" placeholder="AB-123-CD" oninput="this.value=this.value.toUpperCase()"/></div>
+        <div class="g"><label>Marque / Modèle *</label><input type="text" id="cv" placeholder="Renault Kangoo"/></div>
+        <div class="g"><label>Atelier *</label><select id="ca"><option value="">-- Sélectionner --</option><option>Cévennes</option><option>Haute-Provence</option><option>Méditerranée</option><option>Provence</option><option>Rhône-Isère</option><option>Gestion</option><option>Fonction/Services</option></select></div>
+        <div class="g"><label>Résultat *</label><select id="cr"><option value="Favorable">Favorable</option><option value="Défaillance mineure">Défaillance mineure</option><option value="Défaillance majeure">Défaillance majeure</option></select></div>
+        <div class="g"><label>Date du CT *</label><input type="date" id="cd"/></div>
+        <div class="g"><label>Prochaine échéance *</label><input type="date" id="ce"/></div>
+        <div class="g full"><label>Notes</label><input type="text" id="cn" placeholder="Prestataire, observations…"/></div>
+      </div>
+      <div class="ferr" id="ct-err"></div>
+    </div>
+    <div class="mf"><button class="bs" onclick="closeModal('ov-add-ct')">Annuler</button><button class="bp" onclick="addCT()"><i class="ti ti-device-floppy"></i> Enregistrer</button></div>
+  </div>
+</div>
+
+<!-- MODAL ADD FRAX -->
+<div class="ov" id="ov-add-frax" onclick="closeMod(event,'ov-add-frax')">
+  <div class="modal">
+    <div class="mh"><h2>Nouveau contrôle FRAX / Pollution</h2><button class="mc" onclick="closeModal('ov-add-frax')"><i class="ti ti-x"></i></button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="g"><label>Immatriculation *</label><input type="text" id="fi" placeholder="AB-123-CD" oninput="this.value=this.value.toUpperCase()"/></div>
+        <div class="g"><label>Marque / Modèle *</label><input type="text" id="fv" placeholder="Renault Kangoo"/></div>
+        <div class="g"><label>Atelier *</label><select id="fa2"><option value="">-- Sélectionner --</option><option>Cévennes</option><option>Haute-Provence</option><option>Méditerranée</option><option>Provence</option><option>Rhône-Isère</option><option>Gestion</option><option>Fonction/Services</option></select></div>
+        <div class="g"><label>Catégorie *</label><select id="fcat"><option value="">-- Sélectionner --</option><option value="VL">VL — Véhicule léger</option><option value="VUL">VUL — Utilitaire léger</option><option value="PL">PL — Poids lourd</option><option value="ATP">ATP — Frigorifique</option></select></div>
+        <div class="g"><label>Fréquence *</label><select id="ffreq" onchange="calcEch()"><option value="">-- Sélectionner --</option><option value="6">6 mois</option><option value="12">1 an</option><option value="24">2 ans</option><option value="36">3 ans</option></select></div>
+        <div class="g"><label>Résultat *</label><select id="fr"><option value="Favorable">Favorable</option><option value="Défavorable">Défavorable</option><option value="Contre-visite requise">Contre-visite requise</option></select></div>
+        <div class="g"><label>Opacité relevée (m⁻¹)</label><input type="number" id="fo" placeholder="Ex : 0.8" step="0.01"/></div>
+        <div class="g"><label>Prestataire</label><input type="text" id="fp" placeholder="Norisko, Bureau Veritas…"/></div>
+        <div class="g"><label>Date du contrôle *</label><input type="date" id="fd" onchange="calcEch()"/></div>
+        <div class="g"><label>Prochaine échéance</label><input type="date" id="fech" placeholder="Calculée auto"/></div>
+        <div class="g full"><label>Notes</label><textarea id="fn" placeholder="Observations, actions correctives…"></textarea></div>
+      </div>
+      <div class="ferr" id="frax-err"></div>
+    </div>
+    <div class="mf"><button class="bs" onclick="closeModal('ov-add-frax')">Annuler</button><button class="bp" onclick="addFRAX()"><i class="ti ti-device-floppy"></i> Enregistrer</button></div>
+  </div>
+</div>
+
+<!-- MODAL CONFIG -->
+<div class="ov" id="ov-cfg" onclick="closeMod(event,'ov-cfg')">
+  <div class="modal">
+    <div class="mh"><h2>Configuration Supabase</h2><button class="mc" onclick="closeModal('ov-cfg')"><i class="ti ti-x"></i></button></div>
+    <div class="mb">
+      <div class="ibox"><i class="ti ti-info-circle"></i><div>Supabase → Settings → API → copie <b>Project URL</b> et la clé <b>anon public</b></div></div>
+      <div class="fg">
+        <div class="g full"><label>URL du projet</label><input type="text" id="sb-url" placeholder="https://xxxx.supabase.co"/></div>
+        <div class="g full"><label>Clé API (anon public)</label><input type="password" id="sb-key"/></div>
+        <div class="g full"><label>Email destinataire alertes</label><input type="email" id="sb-email" placeholder="luis@terresdecuisine.fr"/></div>
+      </div>
+      <div class="sqlb">
+        <div class="sqll">Tables SQL à créer dans Supabase → SQL Editor</div>
+        <pre id="sql">CREATE TABLE controles_techniques (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  immat TEXT NOT NULL, vehicule TEXT NOT NULL,
+  atelier TEXT NOT NULL, resultat TEXT NOT NULL,
+  date_ct DATE NOT NULL, echeance DATE NOT NULL,
+  notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE controles_frax (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  immat TEXT NOT NULL, vehicule TEXT NOT NULL,
+  atelier TEXT NOT NULL, categorie TEXT NOT NULL,
+  frequence INTEGER NOT NULL, resultat TEXT NOT NULL,
+  opacite NUMERIC, date_frax DATE NOT NULL,
+  echeance DATE NOT NULL, prestataire TEXT, notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);</pre>
+        <button class="bcopy" onclick="cpSQL()"><i class="ti ti-copy"></i> Copier le SQL</button>
+      </div>
+    </div>
+    <div class="mf"><button class="bs" onclick="closeModal('ov-cfg')">Annuler</button><button class="bp" onclick="saveCfg()"><i class="ti ti-plug"></i> Connecter</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<!-- MELINA CHAT -->
+<button class="melina-btn" onclick="toggleMelina()" title="Mélina — Assistant flotte">🌿</button>
+<div class="melina-panel" id="melina-panel">
+  <div class="melina-head">
+    <div class="melina-av">M</div>
+    <div class="melina-info">
+      <div class="melina-name">Mélina</div>
+      <div class="melina-status">Assistant flotte · Terres de Cuisine</div>
+    </div>
+    <button class="melina-close" onclick="toggleMelina()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="melina-msgs" id="melina-msgs"></div>
+  <div class="quick-btns" id="quick-btns">
+    <button class="qbtn" onclick="askMelina('Quels véhicules ont un CT urgent ?')">CT urgents</button>
+    <button class="qbtn" onclick="askMelina('Quels FRAX arrivent à échéance ?')">FRAX à renouveler</button>
+    <button class="qbtn" onclick="askMelina('Fais-moi un bilan de la flotte')">Bilan flotte</button>
+    <button class="qbtn" onclick="askMelina('Y a-t-il des doublons dans mes données ?')">Vérifier doublons</button>
+  </div>
+  <div class="melina-input">
+    <input type="text" id="melina-input" placeholder="Pose une question à Mélina…" onkeydown="if(event.key==='Enter')sendMelina()"/>
+    <button class="melina-send" id="melina-send" onclick="sendMelina()"><i class="ti ti-send"></i></button>
+  </div>
+</div>
+
+
+<script>
+let cfg={url:'https://lochescrwphclehbohhk.supabase.co',key:'sb_publishable_274-dWZWzcHAsLflIQTsBQ_Nkpkx8Hl',email:''};
+let sbOk=false,ctR=[],fraxR=[],ctSort={k:'echeance',a:true},fraxSort={k:'echeance',a:true};
+let selAtelier='Tous les ateliers';
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const s=localStorage.getItem('tc_cfg'); if(s){const c=JSON.parse(s);if(c.email)cfg.email=c.email;}
+  document.getElementById('sb-url').value=cfg.url;
+  document.getElementById('sb-key').value=cfg.key;
+  document.getElementById('sb-email').value=cfg.email;
+  loadLocal(); rCT(); rFRAX(); connect();
+});
+
+async function connect(){
+  setDb('off','Connexion…');
+  try{
+    const r=await fetch(`${cfg.url}/rest/v1/controles_techniques?select=count`,{headers:{apikey:cfg.key,Authorization:`Bearer ${cfg.key}`}});
+    if(!r.ok) throw 0;
+    sbOk=true; setDb('on','Supabase connecté'); toast('✓ Supabase connecté');
+    await Promise.all([fetchCT(),fetchFRAX()]);
+  }catch{sbOk=false;setDb('err','Mode local');toast('Mode local actif','e');}
+}
+
+async function fetchCT(){
+  const d=await(await fetch(`${cfg.url}/rest/v1/controles_techniques?select=*&order=echeance.asc`,{headers:{apikey:cfg.key,Authorization:`Bearer ${cfg.key}`}})).json();
+  ctR=d.map(r=>({id:r.id,immat:r.immat,vehicule:r.vehicule,atelier:r.atelier,resultat:r.resultat,dateCT:r.date_ct,echeance:r.echeance,notes:r.notes||''}));
+  saveLocal();rCT();
+}
+async function fetchFRAX(){
+  try{
+    const d=await(await fetch(`${cfg.url}/rest/v1/controles_frax?select=*&order=echeance.asc`,{headers:{apikey:cfg.key,Authorization:`Bearer ${cfg.key}`}})).json();
+    fraxR=d.map(r=>({id:r.id,immat:r.immat,vehicule:r.vehicule,atelier:r.atelier,categorie:r.categorie,frequence:r.frequence,resultat:r.resultat,opacite:r.opacite,dateFRAX:r.date_frax,echeance:r.echeance,prestataire:r.prestataire||'',notes:r.notes||''}));
+    saveLocal();rFRAX();
+  }catch{}
+}
+async function sbIns(tbl,body){if(!sbOk)return;await fetch(`${cfg.url}/rest/v1/${tbl}`,{method:'POST',headers:{apikey:cfg.key,Authorization:`Bearer ${cfg.key}`,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(body)});}
+async function sbDel(tbl,id){if(!sbOk)return;await fetch(`${cfg.url}/rest/v1/${tbl}?id=eq.${id}`,{method:'DELETE',headers:{apikey:cfg.key,Authorization:`Bearer ${cfg.key}`}});}
+
+function saveLocal(){localStorage.setItem('tc_ct',JSON.stringify(ctR));localStorage.setItem('tc_frax',JSON.stringify(fraxR));}
+function loadLocal(){try{const d=localStorage.getItem('tc_ct');if(d)ctR=JSON.parse(d);}catch{}try{const d=localStorage.getItem('tc_frax');if(d)fraxR=JSON.parse(d);}catch{}}
+
+function al(e){const t=new Date();t.setHours(0,0,0,0);const d=Math.floor((new Date(e)-t)/86400000);if(d<0)return'expired';if(d<=30)return'danger';if(d<=90)return'warn';return'ok';}
+function dl(e){const t=new Date();t.setHours(0,0,0,0);return Math.floor((new Date(e)-t)/86400000);}
+function fd(d){if(!d)return'—';return new Date(d).toLocaleDateString('fr-FR');}
+
+function kpis(recs,pre){
+  const c={ok:0,warn:0,danger:0,expired:0};recs.forEach(r=>c[al(r.echeance)]++);
+  document.getElementById(`${pre}-tot`).textContent=recs.length;
+  document.getElementById(`${pre}-ok`).textContent=c.ok;
+  document.getElementById(`${pre}-w`).textContent=c.warn;
+  document.getElementById(`${pre}-d`).textContent=c.danger+c.expired;
+  const n=c.danger+c.expired+c.warn,b=document.getElementById(`badge-${pre}`);
+  b.textContent=n;b.style.display=n>0?'inline-block':'none';
+}
+
+function statusBadge(lvl,d){return{ok:`<span class="badge bok"><i class="ti ti-check"></i> À jour J-${d}</span>`,warn:`<span class="badge bwarn"><i class="ti ti-clock"></i> J-${d}</span>`,danger:`<span class="badge bdanger"><i class="ti ti-alert-triangle"></i> Urgent J-${d}</span>`,expired:`<span class="badge bexp"><i class="ti ti-ban"></i> Expiré</span>`}[lvl];}
+
+function rCT(){
+  kpis(ctR,'ct');
+  const s=document.getElementById('ct-s').value.toLowerCase(),at=document.getElementById('ct-fa').value,st=document.getElementById('ct-fs').value;
+  let f=ctR.filter(r=>{if(at&&r.atelier!==at)return false;if(st&&al(r.echeance)!==st)return false;if(s&&!r.immat.toLowerCase().includes(s)&&!r.vehicule.toLowerCase().includes(s))return false;return true;});
+  f.sort((a,b)=>{let va=a[ctSort.k]||'',vb=b[ctSort.k]||'';if(['echeance','dateCT'].includes(ctSort.k)){va=new Date(va);vb=new Date(vb);}return ctSort.a?(va>vb?1:-1):(va<vb?1:-1);});
+  const tb=document.getElementById('ct-tb'),em=document.getElementById('ct-em');
+  if(!f.length){tb.innerHTML='';em.classList.add('show');return;}em.classList.remove('show');
+  const resB={'Favorable':'<span class="badge bfav">Favorable</span>','Défaillance mineure':'<span class="badge bmin">Déf. mineure</span>','Défaillance majeure':'<span class="badge bmaj">Déf. majeure</span>'};
+  tb.innerHTML=f.map(r=>`<tr><td class="tim">${r.immat}</td><td>${r.vehicule}</td><td>${r.atelier}</td><td>${fd(r.dateCT)}</td><td>${fd(r.echeance)}</td><td>${resB[r.resultat]||r.resultat}</td><td>${statusBadge(al(r.echeance),dl(r.echeance))}</td><td><div class="tac"><button class="bi d" onclick="delCT('${r.id}')" title="Supprimer"><i class="ti ti-trash"></i></button></div></td></tr>`).join('');
+}
+
+function rFRAX(){
+  kpis(fraxR,'frax');
+  const s=document.getElementById('frax-s').value.toLowerCase(),at=document.getElementById('frax-fa').value,st=document.getElementById('frax-fs').value;
+  let f=fraxR.filter(r=>{if(at&&r.atelier!==at)return false;if(st&&al(r.echeance)!==st)return false;if(s&&!r.immat.toLowerCase().includes(s)&&!r.vehicule.toLowerCase().includes(s))return false;return true;});
+  f.sort((a,b)=>{let va=a[fraxSort.k]||'',vb=b[fraxSort.k]||'';if(['echeance','dateFRAX'].includes(fraxSort.k)){va=new Date(va);vb=new Date(vb);}return fraxSort.a?(va>vb?1:-1):(va<vb?1:-1);});
+  const tb=document.getElementById('frax-tb'),em=document.getElementById('frax-em');
+  if(!f.length){tb.innerHTML='';em.classList.add('show');return;}em.classList.remove('show');
+  const resB={'Favorable':'<span class="badge bfav">Favorable</span>','Défavorable':'<span class="badge bdef">Défavorable</span>','Contre-visite requise':'<span class="badge bcv">Contre-visite</span>'};
+  tb.innerHTML=f.map(r=>`<tr><td class="tim">${r.immat}</td><td>${r.vehicule}</td><td>${r.atelier}</td><td>${r.categorie}</td><td>${fd(r.dateFRAX)}</td><td>${fd(r.echeance)}</td><td>${resB[r.resultat]||r.resultat}${r.opacite?` <span style="font-size:11px;color:var(--gray-500)">${r.opacite}m⁻¹</span>`:''}</td><td>${statusBadge(al(r.echeance),dl(r.echeance))}</td><td><div class="tac"><button class="bi d" onclick="delFRAX('${r.id}')" title="Supprimer"><i class="ti ti-trash"></i></button></div></td></tr>`).join('');
+}
+
+async function addCT(){
+  const i=document.getElementById('ci').value.trim(),v=document.getElementById('cv').value.trim(),a=document.getElementById('ca').value,res=document.getElementById('cr').value,d=document.getElementById('cd').value,e=document.getElementById('ce').value,n=document.getElementById('cn').value.trim(),err=document.getElementById('ct-err');
+  if(!i||!v||!a||!d||!e){err.textContent='Champs obligatoires manquants.';return;}err.textContent='';
+  const rec={id:crypto.randomUUID(),immat:i,vehicule:v,atelier:a,resultat:res,dateCT:d,echeance:e,notes:n};
+  ctR.push(rec);saveLocal();await sbIns('controles_techniques',{immat:i,vehicule:v,atelier:a,resultat:res,date_ct:d,echeance:e,notes:n});
+  rCT();closeModal('ov-add-ct');['ci','cv','cd','ce','cn'].forEach(id=>document.getElementById(id).value='');document.getElementById('ca').value='';
+  toast(`✓ CT enregistré — ${i}`);
+}
+async function delCT(id){if(!confirm('Supprimer ?'))return;ctR=ctR.filter(r=>r.id!==id);saveLocal();await sbDel('controles_techniques',id);rCT();toast('Supprimé.');}
+
+function calcEch(){
+  const d=document.getElementById('fd').value,f=parseInt(document.getElementById('ffreq').value);
+  if(!d||!f)return;const dt=new Date(d);dt.setMonth(dt.getMonth()+f);document.getElementById('fech').value=dt.toISOString().slice(0,10);
+}
+async function addFRAX(){
+  const i=document.getElementById('fi').value.trim(),v=document.getElementById('fv').value.trim(),a=document.getElementById('fa2').value,cat=document.getElementById('fcat').value,freq=document.getElementById('ffreq').value,res=document.getElementById('fr').value,op=document.getElementById('fo').value,d=document.getElementById('fd').value,e=document.getElementById('fech').value,p=document.getElementById('fp').value.trim(),n=document.getElementById('fn').value.trim(),err=document.getElementById('frax-err');
+  if(!i||!v||!a||!cat||!freq||!d||!e){err.textContent='Champs obligatoires manquants.';return;}err.textContent='';
+  const rec={id:crypto.randomUUID(),immat:i,vehicule:v,atelier:a,categorie:cat,frequence:parseInt(freq),resultat:res,opacite:op||null,dateFRAX:d,echeance:e,prestataire:p,notes:n};
+  fraxR.push(rec);saveLocal();await sbIns('controles_frax',{immat:i,vehicule:v,atelier:a,categorie:cat,frequence:parseInt(freq),resultat:res,opacite:op||null,date_frax:d,echeance:e,prestataire:p,notes:n});
+  rFRAX();closeModal('ov-add-frax');['fi','fv','fo','fd','fech','fp','fn'].forEach(id=>document.getElementById(id).value='');document.getElementById('fa2').value='';document.getElementById('fcat').value='';document.getElementById('ffreq').value='';
+  toast(`✓ FRAX enregistré — ${i}`);
+}
+async function delFRAX(id){if(!confirm('Supprimer ?'))return;fraxR=fraxR.filter(r=>r.id!==id);saveLocal();await sbDel('controles_frax',id);rFRAX();toast('Supprimé.');}
+
+function srt(m,k){if(m==='ct'){if(ctSort.k===k)ctSort.a=!ctSort.a;else{ctSort.k=k;ctSort.a=true;}rCT();}else{if(fraxSort.k===k)fraxSort.a=!fraxSort.a;else{fraxSort.k=k;fraxSort.a=true;}rFRAX();}}
+
+function expCSV(m){
+  const recs=m==='ct'?ctR:fraxR;if(!recs.length){toast('Aucune donnée.','e');return;}
+  let h,rows;
+  if(m==='ct'){h=['Immat','Véhicule','Atelier','Résultat','Date CT','Échéance','Jours','Statut','Notes'];rows=recs.map(r=>[r.immat,r.vehicule,r.atelier,r.resultat,fd(r.dateCT),fd(r.echeance),dl(r.echeance),{ok:'À jour',warn:'3 mois',danger:'Urgent',expired:'Expiré'}[al(r.echeance)],r.notes].map(v=>`"${v}"`).join(','));}
+  else{h=['Immat','Véhicule','Atelier','Catégorie','Fréquence','Résultat','Opacité','Date FRAX','Échéance','Jours','Statut','Prestataire','Notes'];rows=recs.map(r=>[r.immat,r.vehicule,r.atelier,r.categorie,r.frequence+'mois',r.resultat,r.opacite||'',fd(r.dateFRAX),fd(r.echeance),dl(r.echeance),{ok:'À jour',warn:'3 mois',danger:'Urgent',expired:'Expiré'}[al(r.echeance)],r.prestataire,r.notes].map(v=>`"${v}"`).join(','));}
+  const csv=[h.join(','),...rows].join('\n'),blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`${m.toUpperCase()}_TC_${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);toast('✓ CSV exporté');
+}
+
+function alertMail(m){
+  const recs=m==='ct'?ctR:fraxR,alerts=recs.filter(r=>{const l=al(r.echeance);return l==='danger'||l==='expired'||l==='warn';});
+  if(!alerts.length){toast('Aucune alerte.');return;}
+  const lbl=m==='ct'?'CT':'FRAX',lines=alerts.map(r=>{const d=dl(r.echeance),l=al(r.echeance),tag=l==='expired'?'[EXPIRÉ]':l==='danger'?'[URGENT]':'[ATTENTION]';return`${tag} ${r.immat} — ${r.vehicule} (${r.atelier}) — Échéance : ${fd(r.echeance)} (J${d>=0?'-'+d:'+'+Math.abs(d)})`;}).join('\n');
+  const sub=encodeURIComponent(`🚨 Alertes ${lbl} — Terres de Cuisine (${alerts.length} véhicule${alerts.length>1?'s':''})`),body=encodeURIComponent(`Bonjour,\n\nVéhicules à surveiller (${lbl}) :\n\n${lines}\n\n---\nSuivi flotte — Terres de Cuisine\n${new Date().toLocaleString('fr-FR')}`);
+  window.open(`mailto:${cfg.email||''}?subject=${sub}&body=${body}`,'_blank');toast(`✓ Mail préparé — ${alerts.length} alerte${alerts.length>1?'s':''}`);
+}
+
+// ANOMALIES
+function selAt(btn,name){document.querySelectorAll('.abtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selAtelier=name;}
+function loadEx(){
+  document.getElementById('raw').value=`Immat\tVéhicule\tAtelier\tConso réelle\tConso théo\tÉcart\tKm\nAB-123-CD\tRenault Kangoo\tProvence\t12.4\t8.5\t+46%\t3240\nEF-456-GH\tPeugeot Expert\tCévennes\t7.1\t8.0\t-11%\t1820\nGH-789-IJ\tCitroën Berlingo\tMéditerranée\t14.2\t8.8\t+61%\t2980\nKL-012-MN\tFord Transit\tHaute-Provence\t10.1\t9.2\t+10%\t4120`;
+  document.getElementById('p-deb').value='2026-03';document.getElementById('p-fin').value='2026-05';document.getElementById('p-dest').value='M. Martin';
+}
+const gmsgs=['Analyse des données…','Détection des anomalies…','Calcul des écarts…','Rédaction du compte rendu…','Finalisation…'];
+async function genReport(){
+  const raw=document.getElementById('raw').value.trim();if(!raw){toast('Colle tes données d\'abord.','e');return;}
+  const fmt=document.querySelector('input[name="fmt"]:checked').value,deb=document.getElementById('p-deb').value,fin=document.getElementById('p-fin').value,dest=document.getElementById('p-dest').value.trim()||'le responsable logistique';
+  const periode=deb&&fin?`${fmtMois(deb)} à ${fmtMois(fin)}`:'période non précisée';
+  document.getElementById('btn-gen').disabled=true;document.getElementById('gen').classList.add('show');document.getElementById('rbox').classList.remove('show');
+  let mi=0;const iv=setInterval(()=>{mi=(mi+1)%gmsgs.length;document.getElementById('gen-msg').textContent=gmsgs[mi];},1800);
+  const fmts={synthetique:'Rédige un compte rendu SYNTHÉTIQUE (15 lignes max) : résumé en 2 phrases, liste des véhicules anormaux avec écart, 3 actions concrètes.',detaille:'Rédige un compte rendu DÉTAILLÉ : analyse chaque véhicule anormal (cause probable, impact coût, recommandation). Conclus par un plan d\'action priorisé.',formel:'Rédige un EMAIL PROFESSIONNEL complet prêt à envoyer. Commence par "Objet :" puis le corps du mail. Signe "Luis Ribeiro, Gestionnaire de Flotte — Terres de Cuisine".'};
+  const prompt=`Tu es Luis Ribeiro, gestionnaire de flotte chez Terres de Cuisine (~95 véhicules, 5 ateliers).\n\nAnalyse les données carburant ci-dessous et génère un compte rendu pour ${dest}, atelier "${selAtelier}", période : ${periode}.\n\n${fmts[fmt]}\n\nRègles : identifie surconsommation (>+15%) et anomalies kilométrage, classe par criticité, utilise les immatriculations exactes, chiffres précis, français professionnel.\n\nDONNÉES :\n${raw}`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();const text=data.content?.[0]?.text||'';
+    clearInterval(iv);document.getElementById('gen').classList.remove('show');document.getElementById('btn-gen').disabled=false;
+    document.getElementById('rc').textContent=text;document.getElementById('rbox').classList.add('show');
+    document.getElementById('rbox').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch{clearInterval(iv);document.getElementById('gen').classList.remove('show');document.getElementById('btn-gen').disabled=false;toast('Erreur de génération.','e');}
+}
+function copyR(){
+  navigator.clipboard.writeText(document.getElementById('rc').textContent).then(()=>{
+    const b=document.getElementById('bcopy');b.innerHTML='<i class="ti ti-check"></i> Copié !';
+    toast('✓ Copié — colle dans ton mail Outlook.');setTimeout(()=>b.innerHTML='<i class="ti ti-copy"></i> Copier',3000);
+  });
+}
+function fmtMois(v){if(!v)return'';const[y,m]=v.split('-');return['jan.','fév.','mars','avr.','mai','juin','juil.','août','sep.','oct.','nov.','déc.'][parseInt(m)-1]+' '+y;}
+
+// NAV
+function showMod(id){document.querySelectorAll('.mod').forEach(m=>m.classList.remove('active'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));document.getElementById(`mod-${id}`).classList.add('active');document.querySelector(`[data-mod="${id}"]`).classList.add('active');}
+function openMod(id){document.getElementById(`ov-${id}`).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeMod(e,id){if(e.target.classList.contains('ov'))closeModal(id);}
+
+// CONFIG
+function saveCfg(){
+  cfg.url=document.getElementById('sb-url').value.trim();cfg.key=document.getElementById('sb-key').value.trim();cfg.email=document.getElementById('sb-email').value.trim();
+  if(!cfg.url||!cfg.key){toast('URL et clé requis.','e');return;}
+  localStorage.setItem('tc_cfg',JSON.stringify(cfg));closeModal('ov-cfg');connect();
+}
+
+// UTILS
+function toast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.style.background=t==='e'?'#B91C1C':'#111827';el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000);}
+}
+}
+function setDb(s,l){const el=document.getElementById('dbst');el.querySelector('.dot').className=`dot ${s==='on'?'on':s==='err'?'err':'off'}`;el.querySelector('span:last-child').textContent=l;}
+function cpSQL(){navigator.clipboard.writeText(document.getElementById('sql').textContent).then(()=>toast('✓ SQL copié'));}
+// ── CARBURANT ──
+let carbData = [];
+let carbMeta = {};
+
+// Correspondance Division → Atelier
+const divisionMap = {
+  '01Z': 'Cévennes',
+  '02Z': 'Haute-Provence', 
+  '25Z': 'Cévennes',
+  'ROM': 'Rhône-Isère',
+  'EXT': 'Fonction/Services',
+  '***': 'Non identifié'
+};
+
+// Correspondance immat → atelier depuis état de parc
+function getAtelierFromImmat(immat) {
+  // Check CT records first
+  const ct = ctR.find(r => r.immat === immat);
+  if (ct) return ct.atelier;
+  const frax = fraxR.find(r => r.immat === immat);
+  if (frax) return frax.atelier;
+  return null;
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('carb-upload-zone').style.borderColor = 'var(--gray-200)';
+  const file = e.dataTransfer.files[0];
+  if (file) processCarburantFile(file);
+}
+
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (file) processCarburantFile(file);
+}
+
+async function processCarburantFile(file) {
+  const zone = document.getElementById('carb-upload-zone');
+  zone.innerHTML = '<div class="spin" style="margin:0 auto 12px"></div><div style="font-size:13px;color:var(--gray-500)">Analyse en cours…</div>';
+
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    
+    // Find header row (row 5 = index 4)
+    const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    
+    // Find header row
+    let headerRow = 4;
+    for (let i = 0; i < raw.length; i++) {
+      if (raw[i] && raw[i].includes('Immatriculation véhicule')) {
+        headerRow = i;
+        break;
+      }
+    }
+    
+    const headers = raw[headerRow];
+    const rows = raw.slice(headerRow + 1).filter(r => r && r[headers.indexOf('Immatriculation véhicule')]);
+    
+    // Extract period from first rows
+    let period = '';
+    for (let i = 0; i < 4; i++) {
+      if (raw[i]) {
+        const str = raw[i].join(' ');
+        if (str.includes('Du')) period = str.replace(/Filtre.*?:/g,'').replace(/Période.*?:/g,'').replace(/Compte.*$/,'').trim();
+      }
+    }
+    carbMeta.period = period;
+    carbMeta.filename = file.name;
+    
+    const idx = {};
+    ['Immatriculation véhicule','Division','Catégorie / Libellé produit','Produit','Quantité','Unité','Montant HT - EUR','Date','Ville','Kilométrage'].forEach(col => {
+      idx[col] = headers.indexOf(col);
+    });
+    
+    carbData = rows.map(r => {
+      const immat = r[idx['Immatriculation véhicule']] || '';
+      const division = r[idx['Division']] || '';
+      const categorie = r[idx['Catégorie / Libellé produit']] || '';
+      const produit = r[idx['Produit']] || '';
+      const quantite = parseFloat(r[idx['Quantité']]) || 0;
+      const montant = parseFloat(r[idx['Montant HT - EUR']]) || 0;
+      const date = r[idx['Date']] || '';
+      const ville = r[idx['Ville']] || '';
+      const km = parseFloat(r[idx['Kilométrage']]) || 0;
+      
+      // Determine atelier
+      let atelier = getAtelierFromImmat(immat);
+      if (!atelier) atelier = divisionMap[division] || 'Non identifié';
+      
+      // Normalize category
+      let type = 'Autre';
+      const cat = categorie.toLowerCase();
+      if (cat.includes('diesel') || cat.includes('gazole')) type = 'Diesel';
+      else if (cat.includes('sans plomb') || cat.includes('super') || cat.includes('sp')) type = 'Sans plomb';
+      else if (cat.includes('lavage')) type = 'Lavage';
+      else if (cat.includes('adblue') || cat.includes('ad blue')) type = 'AdBlue';
+      else if (cat.includes('lubri')) type = 'Lubrifiants';
+      
+      return { immat, division, atelier, type, produit, quantite, montant, date, ville, km, categorie };
+    }).filter(r => r.immat);
+    
+    zone.style.display = 'none';
+    renderCarburant();
+    document.getElementById('btn-export-carb').style.display = 'inline-flex';
+    toast(`✓ ${carbData.length} transactions chargées`);
+    
+  } catch(e) {
+    zone.innerHTML = '<i class="ti ti-alert-triangle" style="font-size:36px;color:var(--red);display:block;margin-bottom:8px"></i><div style="font-size:13px;color:var(--red)">Erreur de lecture — vérifie que c'est bien un fichier Total Energies .xlsx</div>';
+    console.error(e);
+  }
+}
+
+function renderCarburant() {
+  if (!carbData.length) return;
+  
+  const filterType = document.getElementById('carb-filter-type').value;
+  const filterAtelier = document.getElementById('carb-filter-atelier').value;
+  
+  let filtered = carbData.filter(r => {
+    if (filterType && r.type !== filterType) return false;
+    if (filterAtelier && r.atelier !== filterAtelier) return false;
+    return true;
+  });
+  
+  // Show elements
+  ['carb-kpis','carb-filters','carb-atelier-grid','carb-detail-wrap'].forEach(id => {
+    document.getElementById(id).style.display = id === 'carb-atelier-grid' ? 'block' : id === 'carb-kpis' ? 'grid' : 'flex';
+  });
+  document.getElementById('carb-detail-wrap').style.display = 'block';
+  
+  // Period
+  if (carbMeta.period) {
+    const p = document.getElementById('carb-period');
+    p.style.display = 'flex';
+    document.getElementById('carb-period-text').textContent = carbMeta.period;
+  }
+  
+  // Global KPIs
+  const totalTrans = filtered.length;
+  const totalLitres = filtered.filter(r => r.type !== 'Lavage' && r.type !== 'Lubrifiants').reduce((s,r) => s + r.quantite, 0);
+  const totalCout = filtered.reduce((s,r) => s + r.montant, 0);
+  const totalLavage = filtered.filter(r => r.type === 'Lavage').length;
+  
+  document.getElementById('carb-tot-trans').textContent = totalTrans;
+  document.getElementById('carb-tot-litres').textContent = totalLitres.toFixed(0) + ' L';
+  document.getElementById('carb-tot-cout').textContent = totalCout.toFixed(2) + ' €';
+  document.getElementById('carb-tot-lavage').textContent = totalLavage;
+  
+  // Group by atelier
+  const ateliers = {};
+  filtered.forEach(r => {
+    if (!ateliers[r.atelier]) ateliers[r.atelier] = { trans:0, litres:0, cout:0, lavage:0, adblue:0, diesel:0, sp:0 };
+    const a = ateliers[r.atelier];
+    a.trans++;
+    a.cout += r.montant;
+    if (r.type === 'Diesel') { a.diesel += r.quantite; a.litres += r.quantite; }
+    else if (r.type === 'Sans plomb') { a.sp += r.quantite; a.litres += r.quantite; }
+    else if (r.type === 'Lavage') a.lavage++;
+    else if (r.type === 'AdBlue') a.adblue += r.quantite;
+  });
+  
+  const atelierOrder = ['Cévennes','Haute-Provence','Méditerranée','Provence','Rhône-Isère','Gestion','Fonction/Services','Non identifié'];
+  const sorted = atelierOrder.filter(a => ateliers[a]).concat(Object.keys(ateliers).filter(a => !atelierOrder.includes(a)));
+  
+  document.getElementById('carb-atelier-grid').innerHTML = sorted.map(name => {
+    const a = ateliers[name];
+    const pct = totalCout > 0 ? (a.cout / totalCout * 100) : 0;
+    return `<div class="atelier-card">
+      <div class="atelier-card-head">
+        <div class="atelier-card-name"><i class="ti ti-map-pin"></i>${name}</div>
+        <span class="badge bok">${a.trans} transactions</span>
+      </div>
+      <div class="atelier-stats">
+        <div class="astat green"><div class="astat-val">${a.litres.toFixed(0)} L</div><div class="astat-lbl">Total litres</div></div>
+        <div class="astat amber"><div class="astat-val">${a.cout.toFixed(0)} €</div><div class="astat-lbl">Coût HT</div></div>
+        <div class="astat"><div class="astat-val">${a.diesel.toFixed(0)} L</div><div class="astat-lbl">Diesel</div></div>
+        <div class="astat blue"><div class="astat-val">${a.sp.toFixed(0)} L</div><div class="astat-lbl">Sans plomb</div></div>
+        <div class="astat red"><div class="astat-val">${a.lavage}</div><div class="astat-lbl">Lavages</div></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct.toFixed(1)}%"></div></div>
+      <div style="font-size:11px;color:var(--gray-500);margin-top:4px;text-align:right">${pct.toFixed(1)}% du coût total</div>
+    </div>`;
+  }).join('');
+  
+  // Detail table
+  document.getElementById('carb-tbody').innerHTML = filtered.slice(0, 200).map(r => {
+    const typeColor = { Diesel:'bok', 'Sans plomb':'bwarn', Lavage:'bexp', AdBlue:'badge-danger', Lubrifiants:'bmin' };
+    return `<tr>
+      <td>${r.date}</td>
+      <td class="tim">${r.immat}</td>
+      <td>${r.atelier}</td>
+      <td><span class="badge ${typeColor[r.type]||'bexp'}">${r.type}</span></td>
+      <td style="font-size:12px;color:var(--gray-500)">${r.produit}</td>
+      <td>${r.quantite > 0 ? r.quantite.toFixed(2) + ' L' : '—'}</td>
+      <td style="font-weight:500">${r.montant.toFixed(2)} €</td>
+      <td style="font-size:12px;color:var(--gray-500)">${r.ville}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportCarburant() {
+  if (!carbData.length) return;
+  const h = ['Date','Immatriculation','Atelier','Type','Produit','Quantité (L)','Montant TTC (€)','Ville'];
+  const rows = carbData.map(r => [r.date, r.immat, r.atelier, r.type, r.produit, r.quantite, r.montant, r.ville].map(v => `"${v}"`).join(','));
+  const csv = [h.join(','), ...rows].join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `Carburant_TC_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  URL.revokeObjectURL(url); toast('✓ Export CSV téléchargé');
+}
+
+// ── MÉLINA ──
+let melinaHistory = [];
+let melinaOpen = false;
+
+function toggleMelina() {
+  melinaOpen = !melinaOpen;
+  document.getElementById('melina-panel').classList.toggle('open', melinaOpen);
+  if (melinaOpen && melinaHistory.length === 0) {
+    addMelinaMsg('ai', "Bonjour Luis ! 👋 Je suis Mélina, ton assistante flotte.\n\nJe connais tous tes véhicules, tes CT, tes FRAX et tes données carburant. Pose-moi n'importe quelle question !");
+  }
+  if (melinaOpen) setTimeout(() => document.getElementById('melina-input').focus(), 100);
+}
+
+function addMelinaMsg(role, text) {
+  const msgs = document.getElementById('melina-msgs');
+  const div = document.createElement('div');
+  div.className = `msg ${role === 'ai' ? 'ai' : 'user'}`;
+  div.innerHTML = `<div class="msg-av">${role === 'ai' ? 'M' : 'LR'}</div><div class="msg-bubble">${text}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addTyping() {
+  const msgs = document.getElementById('melina-msgs');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'typing-indicator';
+  div.innerHTML = '<div class="msg-av">M</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function getFleetContext() {
+  const ctAlerts = ctR.filter(r => { const l = al(r.echeance); return l === 'danger' || l === 'expired'; });
+  const ctWarn = ctR.filter(r => al(r.echeance) === 'warn');
+  const fraxAlerts = fraxR.filter(r => { const l = al(r.echeance); return l === 'danger' || l === 'expired'; });
+  const fraxWarn = fraxR.filter(r => al(r.echeance) === 'warn');
+
+  const ctList = ctR.map(r => `${r.immat} (${r.vehicule}, ${r.atelier}) — CT le ${fd(r.dateCT)}, échéance ${fd(r.echeance)}, statut: ${al(r.echeance)}, résultat: ${r.resultat}`).join('\n');
+  const fraxList = fraxR.map(r => `${r.immat} (${r.vehicule}, ${r.atelier}, ${r.categorie}) — FRAX le ${fd(r.dateFRAX)}, échéance ${fd(r.echeance)}, statut: ${al(r.echeance)}, résultat: ${r.resultat}`).join('\n');
+
+  return `Tu es Mélina, l'assistante IA de Luis Ribeiro, gestionnaire de flotte chez Terres de Cuisine (société de restauration collective, ~95 véhicules, 5 ateliers : Cévennes, Haute-Provence, Méditerranée, Provence, Rhône-Isère).
+
+DONNÉES ACTUELLES DE LA FLOTTE :
+
+=== CONTRÔLES TECHNIQUES (${ctR.length} véhicules) ===
+${ctList || 'Aucun CT enregistré.'}
+
+Résumé CT : ${ctAlerts.length} urgent(s)/expiré(s), ${ctWarn.length} alerte(s) 3 mois, ${ctR.length - ctAlerts.length - ctWarn.length} à jour.
+
+=== CONTRÔLES FRAX (${fraxR.length} véhicules) ===
+${fraxList || 'Aucun FRAX enregistré.'}
+
+Résumé FRAX : ${fraxAlerts.length} urgent(s)/expiré(s), ${fraxWarn.length} alerte(s) 3 mois.
+
+INSTRUCTIONS :
+- Réponds en français, ton professionnel mais accessible
+- Sois précise et actionnable — donne des listes claires quand pertinent
+- Tu peux générer des rapports, analyser les données, détecter des anomalies, proposer des actions
+- Si Luis demande un rapport à envoyer, rédige-le directement prêt à copier-coller
+- Date du jour : ${new Date().toLocaleDateString('fr-FR')}`;
+}
+
+async function askMelina(question) {
+  document.getElementById('quick-btns').style.display = 'none';
+  await sendMelinaMsg(question);
+}
+
+async function sendMelina() {
+  const input = document.getElementById('melina-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  document.getElementById('quick-btns').style.display = 'none';
+  await sendMelinaMsg(msg);
+}
+
+async function sendMelinaMsg(userMsg) {
+  addMelinaMsg('user', userMsg);
+  melinaHistory.push({ role: 'user', content: userMsg });
+
+  const context = getFleetContext();
+  const prompt = context + '\n\n---\nQuestion de Luis : ' + userMsg;
+  const url = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
+
+  addMelinaMsg('ai', "Je t'ouvre Claude.ai avec toutes les données de ta flotte et ta question. 🌿\n\nLa réponse s'affichera dans le nouvel onglet — copie-la si tu veux la garder ici.");
+  setTimeout(() => window.open(url, '_blank'), 800);
+  document.getElementById('melina-send').disabled = false;
+}
+
+</script>
+</body>
+</html>
